@@ -108,6 +108,41 @@ export class Game {
     this.renderer.setAnimationLoop(this.frame);
   }
 
+  /** Read-only snapshot for manual playtesting from the dev console. */
+  debugState(): object {
+    const player = this.player.body;
+    return {
+      phase: this.phase,
+      cuts: this.cuts,
+      lineHealth: +this.lineHealth.toFixed(3),
+      player: {
+        pos: player.position.toArray().map((n) => Math.round(n)),
+        line: Math.round(player.lineLength),
+        saw: +sawSpeed(player).toFixed(2),
+        floorTime: +player.floorTime.toFixed(2),
+      },
+      rivals: this.rivals.map((r) => ({
+        name: r.name,
+        personality: r.brain.personality,
+        attacking: r.brain.attacking,
+        flying: r.kite.isFlying,
+        hooked: r.hooked,
+        health: +r.health.toFixed(3),
+        pos: r.kite.body.position.toArray().map((n) => Math.round(n)),
+        line: Math.round(r.kite.body.lineLength),
+        saw: +sawSpeed(r.kite.body).toFixed(2),
+        gap: this.player.isFlying
+          ? +polylineDistance(
+              this.player.string.points,
+              r.kite.string.points,
+              PECHA.ignoreNearAnchor,
+              PECHA.ignoreNearAnchor,
+            ).distance.toFixed(2)
+          : null,
+      })),
+    };
+  }
+
   /** From the title screen: take control of the kite already in the sky. */
   play(): void {
     this.resetRound();
@@ -174,7 +209,8 @@ export class Game {
       this.ray.setFromCamera(pointer, this.aimCamera);
       this.ray.ray.at(PLAYER.aimDistance, this.aim);
       aimOnLine(kite.body.anchor, this.aim, kite.body.lineLength, this.aim);
-      kite.fly({ pull, target: this.aim }, wind, dt, t, this.camera.position);
+      const inPecha = this.rivals.some((r) => r.hooked);
+      kite.fly({ pull, target: this.aim, inPecha }, wind, dt, t, this.camera.position);
 
       if (this.phase === 'playing') {
         this.hud.setFlight(pull, kite.body.lineLength, kite.body.position.y);

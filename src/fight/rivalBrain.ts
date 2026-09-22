@@ -17,7 +17,7 @@ export interface BrainContext {
 type Mode = 'hover' | 'attack';
 
 /** How close a cautious flyer lets you get before it fights. */
-const CAUTIOUS_RANGE = 35;
+const CAUTIOUS_RANGE = 45;
 /** Where on your line (0 = your hand, 1 = your kite) rivals try to cross. */
 const CROSS_AT = 0.7;
 /** How far past your line a rival steers so its own line sweeps across. */
@@ -73,9 +73,11 @@ export class RivalBrain {
     }
   }
 
+  /** Holds station over home: just enough line out to reach it, no more. */
   private hover(ctx: BrainContext): KiteInput {
+    const homeDistance = ctx.self.anchor.distanceTo(this.home);
     aimOnLine(ctx.self.anchor, this.home, ctx.self.lineLength, this.target);
-    return { pull: ctx.self.position.y < this.home.y, target: this.target };
+    return { pull: ctx.self.lineLength >= homeDistance, target: this.target };
   }
 
   /** Steers so this line passes through a point on the player's line. */
@@ -116,6 +118,6 @@ export class RivalBrain {
         pull = this.sawPull;
         break;
     }
-    return { pull, target };
+    return { pull, target, inPecha: true };
   }
 }

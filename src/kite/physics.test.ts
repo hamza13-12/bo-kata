@@ -24,6 +24,15 @@ describe('stepKite', () => {
     expect(body.lineLength).toBe(KITE_PHYSICS.maxLine);
   });
 
+  it('pulls in much faster while hooked in a pecha', () => {
+    const calm = new KiteBody(anchor, new Vector3(0, 60, -40), 100);
+    const pecha = new KiteBody(anchor, new Vector3(0, 60, -40), 100);
+    stepKite(calm, { pull: true, target: calm.position.clone() }, 4, 0.1);
+    stepKite(pecha, { pull: true, target: pecha.position.clone(), inPecha: true }, 4, 0.1);
+    expect(calm.lineRate).toBeCloseTo(-KITE_PHYSICS.reelInSpeed);
+    expect(pecha.lineRate).toBeCloseTo(-KITE_PHYSICS.pechaReelInSpeed);
+  });
+
   it('reports the line rate while paying out', () => {
     const body = new KiteBody(anchor, new Vector3(0, 60, -40), 60);
     stepKite(body, { pull: false, target: body.position.clone() }, 4, 0.1);

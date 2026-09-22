@@ -2,11 +2,13 @@ import { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { KITE_PHYSICS } from '../config';
 import { createRng } from '../core/rng';
-import { KiteBody } from '../kite/physics';
+import { KiteBody, stepKite } from '../kite/physics';
 import { RivalBrain } from './rivalBrain';
 
 const playerLine = Array.from({ length: 11 }, (_, i) => new Vector3(0, 12 + i * 4, -i * 7));
 const playerKite = playerLine[playerLine.length - 1] ?? new Vector3();
+/** Well outside a cautious flyer's range. */
+const farKite = new Vector3(-150, 50, -80);
 
 function rival(): KiteBody {
   return new KiteBody(new Vector3(60, 14, -40), new Vector3(40, 50, -80), 70);
@@ -15,8 +17,21 @@ function rival(): KiteBody {
 describe('RivalBrain', () => {
   it('a cautious flyer keeps its distance from a far kite', () => {
     const brain = new RivalBrain('cautious', new Vector3(45, 55, -85), createRng(1));
-    brain.think({ self: rival(), playerLine, playerKite, hooked: false, dt: 0.1 });
+    brain.think({ self: rival(), playerLine, playerKite: farKite, hooked: false, dt: 0.1 });
     expect(brain.attacking).toBe(false);
+  });
+
+  it('a hovering flyer keeps its line near the length home needs', () => {
+    const home = new Vector3(45, 55, -85);
+    const brain = new RivalBrain('cautious', home, createRng(1));
+    const self = rival();
+    const dt = 1 / 60;
+    for (let i = 0; i < 60 * 20; i++) {
+      const input = brain.think({ self, playerLine, playerKite: farKite, hooked: false, dt });
+      stepKite(self, input, 4, dt);
+    }
+    expect(self.lineLength).toBeLessThan(self.anchor.distanceTo(home) + 2);
+    expect(self.position.distanceTo(home)).toBeLessThan(15);
   });
 
   it('a cautious flyer fights when you come close', () => {

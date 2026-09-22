@@ -36,7 +36,7 @@ describe('pechaDamage', () => {
 
   it('dheel beats a plain khainch, as in a real dheel pecha', () => {
     const dheel = KITE_PHYSICS.letOutSpeed;
-    const khainch = KITE_PHYSICS.reelInSpeed;
+    const khainch = KITE_PHYSICS.pechaReelInSpeed;
     const damage = pechaDamage({ saw: dheel, sharpness: 1 }, { saw: khainch, sharpness: 1 }, 1);
     expect(damage.toB).toBeGreaterThan(damage.toA);
   });

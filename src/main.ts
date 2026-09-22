@@ -56,6 +56,9 @@ function boot(): void {
   });
 
   game.start();
+
+  // Dev-only playtesting hook: `__boKata.debugState()` in the console.
+  if (import.meta.env.DEV) Object.assign(window, { __boKata: game });
 }
 
 boot();

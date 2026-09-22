@@ -33,9 +33,9 @@ export class Rival {
     // Rivals fly toward the middle of the sky, in front of the player.
     const inward = -Math.sign(spawn.anchor.x) || 1;
     const home = new Vector3(
-      spawn.anchor.x + inward * range(rng, 10, 25),
-      spawn.anchor.y + range(rng, 35, 55),
-      spawn.anchor.z - range(rng, 35, 55),
+      spawn.anchor.x + inward * range(rng, 20, 40),
+      spawn.anchor.y + range(rng, 30, 45),
+      spawn.anchor.z - range(rng, 15, 30),
     );
     const start = spawn.anchor.clone().add(new Vector3(inward * 8, 30, -30));
 

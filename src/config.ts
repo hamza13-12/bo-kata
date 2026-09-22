@@ -16,7 +16,8 @@ export const CAMERA = {
   near: 0.3,
   far: 2500,
   position: [0, 13.7, 9] as Vec3Tuple,
-  baseLook: [0, 21, -60] as Vec3Tuple,
+  /** Tilted up: the fight happens in the sky, not on the roof. */
+  baseLook: [0, 30, -60] as Vec3Tuple,
   /** How far the view leans toward your kite (0 = fixed, 1 = locked on). */
   followKite: 0.22,
   sway: 0.12,
@@ -33,10 +34,12 @@ export const SKY = {
 } as const;
 
 export const KITE_PHYSICS = {
-  minLine: 45,
+  minLine: 55,
   maxLine: 150,
   /** Metres of line per second while pulling (khainch). */
-  reelInSpeed: 5,
+  reelInSpeed: 2,
+  /** Hand-over-hand pull in a pecha: much faster than a steady khainch. */
+  pechaReelInSpeed: 7,
   /** Metres of line per second while giving slack (dheel). */
   letOutSpeed: 9,
   pullSteer: 4.5,
@@ -88,7 +91,8 @@ export const PECHA = {
   kiteSpeedSaw: 0.35,
   /** Ignore this fraction of each line nearest the rooftops. */
   ignoreNearAnchor: 0.25,
-  regenPerSecond: 0.04,
+  /** Your dor recovers between fights (fraction per second). */
+  regenPerSecond: 0.08,
 } as const;
 
 export const RIVALS = {

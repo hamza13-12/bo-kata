@@ -7,6 +7,8 @@ export interface KiteInput {
   readonly pull: boolean;
   /** Where the flyer is steering the kite. */
   readonly target: Vector3;
+  /** Hooked in a pecha: khainch becomes a fast hand-over-hand pull. */
+  readonly inPecha?: boolean;
 }
 
 /** Pure kite state: no rendering, so it can be unit tested and shared by player and rivals. */
@@ -62,7 +64,7 @@ export function stepKite(body: KiteBody, input: KiteInput, windX: number, dt: nu
 
   const before = body.lineLength;
   body.lineLength = input.pull
-    ? Math.max(K.minLine, before - K.reelInSpeed * dt)
+    ? Math.max(K.minLine, before - (input.inPecha ? K.pechaReelInSpeed : K.reelInSpeed) * dt)
     : Math.min(K.maxLine, before + K.letOutSpeed * dt);
   body.lineRate = (body.lineLength - before) / dt;
 
