@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Bo Kata! A Basant kite-fighting game over the rooftops of Lahore."
+    />
+    <meta name="theme-color" content="#2B2350" />
+    <title>Bo Kata!</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Mukta:wght@400;600;800&family=Noto+Nastaliq+Urdu:wght@700&display=swap"
+    />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Kites flying over Lahore rooftops at sunset"></canvas>
+
+    <div id="labels" class="labels" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div id="score" class="score" hidden>
+        <small>Kites cut</small>
+        <b id="score-count">0</b>
+      </div>
+      <button id="mute" class="chip-button" type="button" aria-pressed="false">Sound on</button>
+    </header>
+
+    <section id="intro" class="screen intro" aria-labelledby="intro-title">
+      <div class="bunting" aria-hidden="true"></div>
+      <div class="screen-inner">
+        <p class="urdu" lang="ur" dir="rtl">بو کاٹا</p>
+        <h1 id="intro-title" class="title">Bo Kata!</h1>
+        <p class="tag">
+          Basant is back over Lahore. The rooftops are full, the sky is full, and every flyer in the
+          Walled City wants your patang.
+        </p>
+        <ul class="controls">
+          <li><span class="key">Move</span><span>Steer your kite</span></li>
+          <li>
+            <span class="key">Hold</span
+            ><span><b>Khainch</b>: pull in your dor and climb (or hold Space)</span>
+          </li>
+          <li>
+            <span class="key">Let go</span
+            ><span><b>Dheel</b>: let your dor out and drift on the wind</span>
+          </li>
+          <li>
+            <span class="key">Pecha</span
+            ><span>Cross a rival’s dor. The line moving faster cuts the other.</span>
+          </li>
+        </ul>
+        <button id="fly" class="primary" type="button">Uraao! Fly your patang</button>
+      </div>
+    </section>
+
+    <section id="gameover" class="screen" aria-labelledby="over-title" hidden>
+      <div class="screen-inner">
+        <h2 id="over-title" class="title">Bo kata…</h2>
+        <p id="over-text" class="tag"></p>
+        <dl class="stats">
+          <div>
+            <dt>Kites cut</dt>
+            <dd id="over-cuts">0</dd>
+          </div>
+          <div>
+            <dt>Best</dt>
+            <dd id="over-best">0</dd>
+          </div>
+        </dl>
+        <p id="over-record" class="record" hidden>New best!</p>
+        <button id="again" class="primary" type="button">Fly again</button>
+      </div>
+    </section>
+
+    <div id="flight" class="flight" hidden>
+      <span id="state" class="pill">Dheel</span>
+      <span class="stat"><small>Dor</small><b id="dor">85</b>m</span>
+      <span class="stat"><small>Height</small><b id="height">48</b>m</span>
+    </div>
+
+    <div id="pecha" class="pecha" role="status" hidden>
+      <p class="pecha-head">
+        <span class="pecha-tag">Pecha!</span>
+        <span>vs <b id="pecha-rival"></b></span>
+      </p>
+      <div class="meter-row">
+        <span>Your dor</span>
+        <span class="meter you"><i id="pecha-you"></i></span>
+      </div>
+      <div class="meter-row">
+        <span>Theirs</span>
+        <span class="meter them"><i id="pecha-them"></i></span>
+      </div>
+      <p id="pecha-hint" class="pecha-hint"></p>
+    </div>
+
+    <div id="bokata" class="bokata" role="status" hidden>
+      <span class="urdu" lang="ur" dir="rtl">بو کاٹا</span>
+      <strong>Bo Kata!</strong>
+      <span id="bokata-sub" class="bokata-sub"></span>
+    </div>
+
+    <div id="warn" class="banner warn" role="alert" hidden>Your patang is dipping. Khainch!</div>
+    <div id="tip" class="banner tip" role="status" hidden></div>
+
+    <div id="nogl" class="nogl" hidden>
+      This game needs WebGL. Try opening it in a recent Chrome, Edge, Firefox or Safari.
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
