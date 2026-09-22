@@ -1,5 +1,8 @@
 import { Vector2 } from 'three';
 
+/** How far above a finger the kite aims (px). */
+const TOUCH_LIFT = 70;
+
 /**
  * Mouse, touch and keyboard: move to steer, hold (or Space) to pull.
  * `pointer` is in normalised device coordinates (-1..1).
@@ -14,7 +17,9 @@ export class Controls {
   constructor(surface: HTMLElement) {
     const { signal } = this.abort;
     const track = (e: PointerEvent): void => {
-      this.pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+      // Aim a little above a finger, so your thumb doesn't hide the kite.
+      const y = e.pointerType === 'touch' ? e.clientY - TOUCH_LIFT : e.clientY;
+      this.pointer.set((e.clientX / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1);
     };
     const release = (): void => {
       this.pointerDown = false;
@@ -38,6 +43,14 @@ export class Controls {
       { signal },
     );
     surface.addEventListener('pointerup', release, { signal });
+    // No long-press menu or magnifier while holding khainch on a phone.
+    surface.addEventListener(
+      'contextmenu',
+      (e) => {
+        e.preventDefault();
+      },
+      { signal },
+    );
     surface.addEventListener('pointercancel', release, { signal });
 
     addEventListener(

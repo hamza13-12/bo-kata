@@ -11,6 +11,7 @@ import {
   TIME_OF_DAY,
 } from '../config';
 import { polylineDistance } from '../core/geometry';
+import { followAmount, nextPixelRatio, verticalFov } from '../core/viewport';
 import type { Rng } from '../core/rng';
 import { pick, range } from '../core/rng';
 import type { Difficulty } from '../fight/difficulty';
@@ -37,6 +38,12 @@ export type Phase = 'intro' | 'playing' | 'lost' | 'over';
 
 const GAME_OVER_DELAY = 2.5;
 const LABEL_LIFT = 3.2;
+/** Keeps off-screen rival arrows clear of the screen edge (px). */
+const EDGE_MARGIN = 28;
+/** Pointer aiming always uses a landscape frame, so a phone reaches as much sky as a laptop. */
+const AIM_ASPECT = 16 / 9;
+/** Seconds between frame-rate checks for dynamic resolution. */
+const FPS_WINDOW = 2;
 
 export interface GameDeps {
   readonly canvas: HTMLCanvasElement;
@@ -46,6 +53,8 @@ export interface GameDeps {
   readonly rng: Rng;
   readonly best: number;
   readonly reduceMotion: boolean;
+  /** Phones and tablets: cap resolution and skip antialiasing on dense screens. */
+  readonly lowPower: boolean;
   /** Told whenever the game moves between title, play and game over. */
   readonly onPhaseChange?: (phase: Phase) => void;
 }
@@ -96,6 +105,11 @@ export class Game {
   private readonly ray = new Raycaster();
   private readonly projected = new Vector3();
   private readonly fxPoint = new Vector3();
+  private follow: number = CAMERA.followKite;
+  private readonly minPixelRatio: number;
+  private pixelRatio: number;
+  private fpsFrames = 0;
+  private fpsTime = 0;
 
   constructor(deps: GameDeps) {
     this.hud = deps.hud;
@@ -106,8 +120,16 @@ export class Game {
     this.reduceMotion = deps.reduceMotion;
     this.onPhaseChange = deps.onPhaseChange;
 
-    this.renderer = new WebGLRenderer({ canvas: deps.canvas, antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Phone screens are dense enough that antialiasing costs more than it shows.
+    const dpr = window.devicePixelRatio || 1;
+    this.renderer = new WebGLRenderer({
+      canvas: deps.canvas,
+      antialias: !(deps.lowPower && dpr >= 2),
+      powerPreference: 'high-performance',
+    });
+    this.pixelRatio = Math.min(dpr, deps.lowPower ? 1.5 : 2);
+    this.minPixelRatio = Math.min(this.pixelRatio, 1);
+    this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(innerWidth, innerHeight);
 
     this.camera = new PerspectiveCamera(
@@ -118,8 +140,11 @@ export class Game {
     );
     this.camera.position.copy(this.cameraHome);
     this.camera.lookAt(this.lookHome);
-    this.aimCamera = this.camera.clone();
+    this.aimCamera = new PerspectiveCamera(CAMERA.fov, AIM_ASPECT, CAMERA.near, CAMERA.far);
+    this.aimCamera.position.copy(this.cameraHome);
+    this.aimCamera.lookAt(this.lookHome);
     this.aimCamera.updateMatrixWorld();
+    this.fitCamera();
 
     this.world = new World(this.scene, this.rng);
     this.player = this.createPlayerKite();
@@ -212,8 +237,10 @@ export class Game {
 
   private readonly frame = (now: number): void => {
     // Clamped both ways: long stalls (tab switches) and out-of-order timestamps.
-    const realDt = Math.min(Math.max((now - this.lastFrame) / 1000, 0), 0.05);
+    const frameSeconds = (now - this.lastFrame) / 1000;
+    const realDt = Math.min(Math.max(frameSeconds, 0), 0.05);
     this.lastFrame = now;
+    this.trackFrameRate(frameSeconds);
     this.slowMo = Math.max(0, this.slowMo - realDt);
     this.shake *= Math.exp(-JUICE.shakeDecay * realDt);
     const dt = realDt * (this.slowMo > 0 ? JUICE.slowMoScale : 1);
@@ -457,7 +484,7 @@ export class Game {
 
   /** Stand on the roof, lean a little toward your kite, sway like a person does. */
   private updateCamera(t: number): void {
-    this.look.copy(this.lookHome).lerp(this.player.mesh.position, CAMERA.followKite);
+    this.look.copy(this.lookHome).lerp(this.player.mesh.position, this.follow);
     this.camera.position.copy(this.cameraHome);
     if (!this.reduceMotion) {
       this.camera.position.x += Math.sin(t * 0.5) * CAMERA.sway;
@@ -470,6 +497,7 @@ export class Game {
     this.camera.lookAt(this.look);
   }
 
+  /** Name tags follow rival kites; kites off-screen get an arrow at the nearest edge. */
   private updateLabels(): void {
     for (const [rival, label] of this.labels) {
       if (!rival.kite.isFlying) {
@@ -479,22 +507,54 @@ export class Game {
       this.projected.copy(rival.kite.mesh.position);
       this.projected.y += LABEL_LIFT;
       this.projected.project(this.camera);
-      const onScreen = this.projected.z < 1 && Math.abs(this.projected.x) < 1.1;
-      label.place(
-        ((this.projected.x + 1) / 2) * innerWidth,
-        ((1 - this.projected.y) / 2) * innerHeight,
-        onScreen,
-      );
+      // Behind the camera, projection mirrors: flip so the arrow points the right way.
+      const behind = this.projected.z > 1;
+      const x = behind ? -this.projected.x : this.projected.x;
+      const onScreen = !behind && Math.abs(x) <= 1 && Math.abs(this.projected.y) <= 1;
+      const px = ((x + 1) / 2) * innerWidth;
+      const py = ((1 - this.projected.y) / 2) * innerHeight;
+      if (onScreen) {
+        label.place(px, py, true);
+      } else {
+        const edge = x < 0 ? 'left' : 'right';
+        label.place(
+          edge === 'left' ? EDGE_MARGIN : innerWidth - EDGE_MARGIN,
+          Math.min(Math.max(py, 90), innerHeight - 120),
+          true,
+          edge,
+        );
+      }
       label.setLine(rival.health, rival.hooked);
     }
   }
 
+  /** Lowers the resolution while the frame rate is poor (slower phones). */
+  private trackFrameRate(frameSeconds: number): void {
+    // Ignore stalls (tab switches) that aren't about rendering speed.
+    if (frameSeconds <= 0 || frameSeconds > 0.25) return;
+    this.fpsFrames += 1;
+    this.fpsTime += frameSeconds;
+    if (this.fpsTime < FPS_WINDOW) return;
+    const next = nextPixelRatio(this.pixelRatio, this.fpsFrames / this.fpsTime, this.minPixelRatio);
+    this.fpsFrames = 0;
+    this.fpsTime = 0;
+    if (next !== this.pixelRatio) {
+      this.pixelRatio = next;
+      this.renderer.setPixelRatio(next);
+    }
+  }
+
+  /** Frames the view for the screen's shape: wider in portrait, following the kite more. */
+  private fitCamera(): void {
+    const aspect = innerWidth / innerHeight;
+    this.camera.aspect = aspect;
+    this.camera.fov = verticalFov(aspect);
+    this.camera.updateProjectionMatrix();
+    this.follow = followAmount(aspect, CAMERA.followKite);
+  }
+
   private readonly onResize = (): void => {
     this.renderer.setSize(innerWidth, innerHeight);
-    for (const camera of [this.camera, this.aimCamera]) {
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-    }
-    this.aimCamera.updateMatrixWorld();
+    this.fitCamera();
   };
 }

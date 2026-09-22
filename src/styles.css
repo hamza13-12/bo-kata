@@ -39,6 +39,11 @@ body {
 }
 
 body {
+  /* No text selection, callouts or tap flashes while playing on a phone. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
   background: var(--dusk);
   color: var(--cream);
   font-family: var(--font-body);
@@ -59,6 +64,26 @@ body {
 
 button {
   font: inherit;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* Instructions written for the device in hand. */
+.on-touch {
+  display: none !important;
+}
+
+@media (pointer: coarse) {
+  .on-mouse {
+    display: none !important;
+  }
+
+  .on-touch {
+    display: flex !important;
+  }
 }
 
 :focus-visible {
@@ -503,8 +528,8 @@ button {
   font-weight: 600;
 }
 
-/* Stack above the flight readout on narrow screens. */
-@media (max-width: 720px) {
+/* Stack above the flight readout wherever they would collide. */
+@media (max-width: 1000px) {
   .pecha {
     bottom: calc(76px + var(--safe-bottom));
   }
@@ -552,6 +577,40 @@ button {
 
 .label.hooked {
   color: var(--saffron);
+}
+
+/* A rival that's off-screen: an arrow at the screen edge pointing to it. */
+.label[data-edge='left'],
+.label[data-edge='right'] {
+  translate: 0 -50%;
+  flex-direction: row;
+  gap: 6px;
+  background: var(--glass);
+  padding: 0.3rem 0.5rem 0.2rem;
+}
+
+.label[data-edge='right'] {
+  translate: -100% -50%;
+  flex-direction: row-reverse;
+}
+
+.label[data-edge='left']::before,
+.label[data-edge='right']::before {
+  content: '';
+  border-block: 6px solid transparent;
+}
+
+.label[data-edge='left']::before {
+  border-right: 9px solid var(--saffron);
+}
+
+.label[data-edge='right']::before {
+  border-left: 9px solid var(--saffron);
+}
+
+.label[data-edge='left'] .label-meter,
+.label[data-edge='right'] .label-meter {
+  display: none;
 }
 
 .label.hooked .label-meter i {
@@ -614,7 +673,7 @@ button {
 .bokata strong {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(4rem, 18vw, 11rem);
+  font-size: clamp(3.4rem, min(18vw, 30vh), 11rem);
   line-height: 0.9;
   color: var(--cream);
   text-shadow:
@@ -672,8 +731,98 @@ button {
     min-width: 4.4rem;
   }
 
+  .topbar {
+    gap: 0.5rem;
+  }
+
+  .score {
+    padding-inline: 0.6rem;
+  }
+
+  .now-playing {
+    max-width: 44vw;
+    font-size: 0.72rem;
+  }
+
+  .chip-button {
+    padding-inline: 0.55rem;
+  }
+
+  .flight {
+    gap: 0.6rem;
+    padding-inline: 0.7rem;
+  }
+
   .controls {
     font-size: 0.92rem;
+  }
+}
+
+/* Phones held sideways: the whole title screen has to fit in ~390px of height. */
+@media (max-height: 520px) {
+  .screen {
+    padding-block: calc(40px + var(--safe-top)) calc(16px + var(--safe-bottom));
+  }
+
+  .screen-inner {
+    gap: 0.5rem;
+  }
+
+  .urdu {
+    font-size: 1.3rem;
+    line-height: 1.7;
+  }
+
+  .title {
+    font-size: clamp(2.8rem, 16vh, 5rem);
+  }
+
+  /* Drop the intro blurb, but keep the game over line saying who cut you. */
+  .intro .tag {
+    display: none;
+  }
+
+  .tag {
+    font-size: 0.95rem;
+  }
+
+  .controls {
+    font-size: 0.85rem;
+    gap: 0.25rem;
+  }
+
+  .stats dd {
+    font-size: 2.2rem;
+  }
+
+  .primary {
+    margin-top: 0.25rem;
+  }
+
+  .banner {
+    top: calc(60px + var(--safe-top));
+  }
+}
+
+/* Short and wide (phone sideways): pecha meter in the bottom-right corner,
+   beside the flight readout, so it never covers the fight in the sky. */
+@media (max-height: 520px) and (min-width: 600px) {
+  .pecha {
+    left: auto;
+    right: 16px;
+    bottom: calc(16px + var(--safe-bottom));
+    transform: none;
+    width: min(20rem, 46vw);
+    padding: 0.45rem 0.75rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .pecha-tag {
+    font-size: 1.2rem;
+  }
+
+  .pecha-hint {
+    font-size: 0.85rem;
   }
 }
 

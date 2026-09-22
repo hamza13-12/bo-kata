@@ -32,10 +32,11 @@ export class Rival {
     this.sharpness = spawn.sharpness;
     this.colors = spawn.colors;
 
-    // Rivals fly toward the middle of the sky, in front of the player.
+    // Rivals fly toward the middle of the sky, in front of the player, so
+    // they stay in view even on a phone held upright.
     const inward = -Math.sign(spawn.anchor.x) || 1;
     const home = new Vector3(
-      spawn.anchor.x + inward * range(rng, 20, 40),
+      spawn.anchor.x + inward * Math.abs(spawn.anchor.x) * range(rng, 0.45, 0.75),
       spawn.anchor.y + range(rng, 30, 45),
       spawn.anchor.z - range(rng, 15, 30),
     );

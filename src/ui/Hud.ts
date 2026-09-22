@@ -38,9 +38,12 @@ export class RivalLabel {
     layer.append(this.el);
   }
 
-  place(x: number, y: number, visible: boolean): void {
+  /** `edge` marks a kite that is off-screen in that direction. */
+  place(x: number, y: number, visible: boolean, edge: 'left' | 'right' | null = null): void {
     this.el.hidden = !visible;
-    if (visible) this.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    if (!visible) return;
+    this.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    this.el.dataset.edge = edge ?? '';
   }
 
   setLine(health: number, hooked: boolean): void {
@@ -85,13 +88,19 @@ export class Hud {
   private celebrateTimer = 0;
   private last = { state: '', dor: -1, height: -1 };
 
+  constructor(private readonly touch: boolean) {}
+
   showPlaying(): void {
     this.intro.hidden = true;
     this.gameOver.hidden = true;
     this.flight.hidden = false;
     this.score.hidden = false;
     this.setScore(0);
-    this.showTip('Hold to pull and climb. Let go to give dheel. Hook a rival’s dor to fight.');
+    this.showTip(
+      this.touch
+        ? 'Touch and drag to steer and khainch. Lift your finger to give dheel.'
+        : 'Hold to pull and climb. Let go to give dheel. Hook a rival’s dor to fight.',
+    );
   }
 
   showGameOver(info: GameOverInfo): void {

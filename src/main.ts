@@ -17,6 +17,9 @@ function supportsWebGL(): boolean {
   }
 }
 
+/** Phones and tablets: touch-first controls and lighter rendering. */
+const isTouch = matchMedia('(pointer: coarse)').matches;
+
 function boot(): void {
   const canvas = document.getElementById('scene');
   if (!(canvas instanceof HTMLCanvasElement)) throw new Error('Missing #scene canvas');
@@ -27,7 +30,7 @@ function boot(): void {
     return;
   }
 
-  const hud = new Hud();
+  const hud = new Hud(isTouch);
   const audio = new AudioEngine(loadMuted());
   const controls = new Controls(canvas);
   const music = new MusicPlayer(audio, (track) => {
@@ -46,6 +49,7 @@ function boot(): void {
     rng: createRng(Date.now()),
     best: loadBest(),
     reduceMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    lowPower: isTouch,
     // Clear while you fly; muffled, like the neighbour's roof, on the menus.
     onPhaseChange: (phase) => {
       music.setMuffled(phase !== 'playing');
