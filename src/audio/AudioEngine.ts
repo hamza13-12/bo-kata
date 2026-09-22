@@ -1,3 +1,12 @@
+/** Controls for the soundtrack once it is routed through the game's audio. */
+export interface MusicBus {
+  setMuffled(muffled: boolean): void;
+}
+
+const MUSIC_VOLUME = 0.7;
+const MUFFLED_VOLUME = 0.45;
+const MUFFLED_CUTOFF = 650;
+
 /**
  * All game sound is synthesised with the Web Audio API: no audio files to
  * load. Browsers only allow sound after a user gesture, so nothing plays
@@ -38,6 +47,29 @@ export class AudioEngine {
     if (this.ctx && this.master) {
       this.master.gain.setTargetAtTime(muted ? 0 : 0.8, this.ctx.currentTime, 0.05);
     }
+  }
+
+  /**
+   * Routes the soundtrack through a low-pass filter into the master volume,
+   * so mute covers it and it can be muffled. Null before `unlock()`.
+   */
+  connectMusic(element: HTMLMediaElement): MusicBus | null {
+    const ctx = this.ctx;
+    if (!ctx || !this.master) return null;
+    const source = ctx.createMediaElementSource(element);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 20000;
+    const gain = ctx.createGain();
+    gain.gain.value = MUSIC_VOLUME;
+    source.connect(filter).connect(gain).connect(this.master);
+    return {
+      setMuffled: (muffled) => {
+        const now = ctx.currentTime;
+        filter.frequency.setTargetAtTime(muffled ? MUFFLED_CUTOFF : 20000, now, 0.4);
+        gain.gain.setTargetAtTime(muffled ? MUFFLED_VOLUME : MUSIC_VOLUME, now, 0.4);
+      },
+    };
   }
 
   /** 0..1: how hard the wind is rushing past the kite. */

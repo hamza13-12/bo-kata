@@ -27,6 +27,11 @@
         <small>Kites cut</small>
         <b id="score-count">0</b>
       </div>
+      <a id="now-playing" class="now-playing" target="_blank" rel="noopener" hidden>
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="sr-only">Now playing:</span>
+        <span id="now-playing-title"></span>
+      </a>
       <button id="mute" class="chip-button" type="button" aria-pressed="false">Sound on</button>
     </header>
 
@@ -55,6 +60,9 @@
           </li>
         </ul>
         <button id="fly" class="primary" type="button">Uraao! Fly your patang</button>
+        <p id="credit" class="credit" hidden>
+          Soundtrack by <span id="credit-artists"></span>, used with permission
+        </p>
       </div>
     </section>
 

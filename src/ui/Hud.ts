@@ -1,3 +1,5 @@
+import type { Track } from '../audio/tracks';
+
 function byId(id: string): HTMLElement {
   const el = document.getElementById(id);
   if (!el) throw new Error(`Missing #${id} in index.html`);
@@ -75,6 +77,10 @@ export class Hud {
   private readonly pechaHint = byId('pecha-hint');
   private readonly bokata = byId('bokata');
   private readonly bokataSub = byId('bokata-sub');
+  private readonly nowPlaying = byId('now-playing');
+  private readonly nowPlayingTitle = byId('now-playing-title');
+  private readonly credit = byId('credit');
+  private readonly creditArtists = byId('credit-artists');
   private tipTimer = 0;
   private celebrateTimer = 0;
   private last = { state: '', dor: -1, height: -1 };
@@ -152,6 +158,25 @@ export class Hud {
     this.celebrateTimer = window.setTimeout(() => {
       this.bokata.hidden = true;
     }, 1900);
+  }
+
+  /** Shows what's playing, linking to the artist when there's a link. */
+  setNowPlaying(track: Track | null): void {
+    this.nowPlaying.hidden = track === null;
+    if (!track) return;
+    this.nowPlayingTitle.textContent = `${track.title} · ${track.artist}`;
+    if (track.link && this.nowPlaying instanceof HTMLAnchorElement) {
+      this.nowPlaying.href = track.link;
+    } else {
+      this.nowPlaying.removeAttribute('href');
+    }
+  }
+
+  setCredits(artists: readonly string[]): void {
+    this.credit.hidden = artists.length === 0;
+    this.creditArtists.textContent = new Intl.ListFormat('en', { type: 'conjunction' }).format(
+      artists,
+    );
   }
 
   setMuted(muted: boolean): void {

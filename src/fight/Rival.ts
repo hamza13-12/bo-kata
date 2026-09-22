@@ -22,6 +22,7 @@ export class Rival {
   readonly kite: Kite;
   readonly brain: RivalBrain;
   readonly sharpness: number;
+  readonly colors: KiteColors;
   /** 1 = fresh line, 0 = cut. */
   health = 1;
   hooked = false;
@@ -29,6 +30,7 @@ export class Rival {
   constructor(scene: Scene, spawn: RivalSpawn, rng: Rng) {
     this.name = spawn.name;
     this.sharpness = spawn.sharpness;
+    this.colors = spawn.colors;
 
     // Rivals fly toward the middle of the sky, in front of the player.
     const inward = -Math.sign(spawn.anchor.x) || 1;

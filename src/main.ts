@@ -1,5 +1,7 @@
 import './styles.css';
 import { AudioEngine } from './audio/AudioEngine';
+import { MusicPlayer } from './audio/MusicPlayer';
+import { creditedArtists } from './audio/tracks';
 import { createRng } from './core/rng';
 import { Game } from './game/Game';
 import { loadBest, loadMuted, saveMuted } from './game/storage';
@@ -28,6 +30,13 @@ function boot(): void {
   const hud = new Hud();
   const audio = new AudioEngine(loadMuted());
   const controls = new Controls(canvas);
+  const music = new MusicPlayer(audio, (track) => {
+    hud.setNowPlaying(track);
+  });
+  void music.load(new URL('music/tracks.json', document.baseURI).href).then((tracks) => {
+    hud.setCredits(creditedArtists(tracks));
+  });
+
   const game = new Game({
     canvas,
     hud,
@@ -37,6 +46,10 @@ function boot(): void {
     rng: createRng(Date.now()),
     best: loadBest(),
     reduceMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    // Clear while you fly; muffled, like the neighbour's roof, on the menus.
+    onPhaseChange: (phase) => {
+      music.setMuffled(phase !== 'playing');
+    },
   });
 
   hud.setMuted(audio.isMuted);
@@ -44,21 +57,24 @@ function boot(): void {
     audio.unlock();
     audio.setMuted(!audio.isMuted);
     hud.setMuted(audio.isMuted);
+    music.syncMute();
     saveMuted(audio.isMuted);
   });
   hud.flyButton.addEventListener('click', () => {
     audio.unlock();
+    music.start();
     game.play();
   });
   hud.againButton.addEventListener('click', () => {
     audio.unlock();
+    music.start();
     game.restart();
   });
 
   game.start();
 
   // Dev-only playtesting hook: `__boKata.debugState()` in the console.
-  if (import.meta.env.DEV) Object.assign(window, { __boKata: game });
+  if (import.meta.env.DEV) Object.assign(window, { __boKata: game, __music: music });
 }
 
 boot();

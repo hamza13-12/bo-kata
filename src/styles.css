@@ -273,6 +273,91 @@ button {
   color: var(--saffron);
 }
 
+.now-playing {
+  margin-left: auto;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: min(22rem, 50vw);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cream);
+  text-decoration: none;
+  background: var(--glass);
+  backdrop-filter: blur(6px);
+  padding: 0.35rem 0.75rem 0.25rem;
+}
+
+.now-playing[href]:hover {
+  color: var(--saffron);
+}
+
+.now-playing #now-playing-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eq {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.eq i {
+  width: 3px;
+  height: 100%;
+  background: var(--saffron);
+  transform-origin: bottom;
+  animation: eq 0.9s ease-in-out infinite alternate;
+}
+
+.eq i:nth-child(2) {
+  animation-delay: -0.3s;
+}
+
+.eq i:nth-child(3) {
+  animation-delay: -0.6s;
+}
+
+@keyframes eq {
+  from {
+    transform: scaleY(0.25);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* When a track is playing, the mute button sits right beside it. */
+.now-playing:not([hidden]) + .chip-button {
+  margin-left: 0;
+}
+
+.credit {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.credit span {
+  font-weight: 800;
+  color: var(--saffron);
+}
+
 .chip-button {
   margin-left: auto;
   pointer-events: auto;
@@ -599,6 +684,10 @@ button {
 
   .primary {
     transition: none;
+  }
+
+  .eq i {
+    animation: none;
   }
 
   .bokata {

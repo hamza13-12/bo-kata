@@ -1,6 +1,15 @@
 import { PerspectiveCamera, Raycaster, Scene, Vector2, Vector3, WebGLRenderer } from 'three';
 import type { AudioEngine } from '../audio/AudioEngine';
-import { CAMERA, KITE_PHYSICS, PECHA, PLAYER, RIVALS } from '../config';
+import {
+  CAMERA,
+  FIREWORKS,
+  JUICE,
+  KITE_PHYSICS,
+  PECHA,
+  PLAYER,
+  RIVALS,
+  TIME_OF_DAY,
+} from '../config';
 import { polylineDistance } from '../core/geometry';
 import type { Rng } from '../core/rng';
 import { pick, range } from '../core/rng';
@@ -8,11 +17,13 @@ import type { Difficulty } from '../fight/difficulty';
 import { difficultyFor } from '../fight/difficulty';
 import { isHooked, pechaDamage, sawSpeed } from '../fight/pecha';
 import { Rival } from '../fight/Rival';
+import { Fireworks } from '../fx/Fireworks';
 import type { Controls } from '../input/Controls';
 import { Kite } from '../kite/Kite';
 import { aimOnLine, windAt } from '../kite/physics';
 import type { Hud } from '../ui/Hud';
 import { RivalLabel } from '../ui/Hud';
+import { nightFor } from '../world/timeOfDay';
 import { World } from '../world/World';
 import { saveBest } from './storage';
 
@@ -22,7 +33,7 @@ import { saveBest } from './storage';
  * lost    – your kite is falling; game over screen shows shortly
  * over    – game over screen is up
  */
-type Phase = 'intro' | 'playing' | 'lost' | 'over';
+export type Phase = 'intro' | 'playing' | 'lost' | 'over';
 
 const GAME_OVER_DELAY = 2.5;
 const LABEL_LIFT = 3.2;
@@ -35,6 +46,8 @@ export interface GameDeps {
   readonly rng: Rng;
   readonly best: number;
   readonly reduceMotion: boolean;
+  /** Told whenever the game moves between title, play and game over. */
+  readonly onPhaseChange?: (phase: Phase) => void;
 }
 
 export class Game {
@@ -49,6 +62,8 @@ export class Game {
   private readonly controls: Controls;
   private readonly rng: Rng;
   private readonly reduceMotion: boolean;
+  private readonly onPhaseChange: ((phase: Phase) => void) | undefined;
+  private readonly fireworks = new Fireworks();
 
   private player: Kite;
   private rivals: Rival[] = [];
@@ -65,6 +80,13 @@ export class Game {
   private lostTo: { reason: 'cut' | 'crash'; by?: string } = { reason: 'crash' };
   private elapsed = 0;
   private lastFrame = 0;
+  /** Seconds of play this round: drives sunset into night. */
+  private roundTime = 0;
+  private night = 0;
+  private ambientFireworkTimer = 0;
+  /** Real seconds of slow motion left after a cut. */
+  private slowMo = 0;
+  private shake = 0;
 
   private readonly cameraHome = new Vector3(...CAMERA.position);
   private readonly lookHome = new Vector3(...CAMERA.baseLook);
@@ -73,6 +95,7 @@ export class Game {
   private readonly autopilot = new Vector2();
   private readonly ray = new Raycaster();
   private readonly projected = new Vector3();
+  private readonly fxPoint = new Vector3();
 
   constructor(deps: GameDeps) {
     this.hud = deps.hud;
@@ -81,6 +104,7 @@ export class Game {
     this.rng = deps.rng;
     this.best = deps.best;
     this.reduceMotion = deps.reduceMotion;
+    this.onPhaseChange = deps.onPhaseChange;
 
     this.renderer = new WebGLRenderer({ canvas: deps.canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -99,6 +123,7 @@ export class Game {
 
     this.world = new World(this.scene, this.rng);
     this.player = this.createPlayerKite();
+    this.scene.add(this.fireworks.group);
 
     addEventListener('resize', this.onResize);
   }
@@ -157,9 +182,15 @@ export class Game {
     this.resetRound();
   }
 
+  private setPhase(phase: Phase): void {
+    this.phase = phase;
+    this.onPhaseChange?.(phase);
+  }
+
   private resetRound(): void {
-    this.phase = 'playing';
+    this.setPhase('playing');
     this.cuts = 0;
+    this.roundTime = 0;
     this.newBest = false;
     this.lineHealth = 1;
     this.spawnTimer = RIVALS.firstSpawnDelay;
@@ -180,8 +211,12 @@ export class Game {
   }
 
   private readonly frame = (now: number): void => {
-    const dt = Math.min((now - this.lastFrame) / 1000, 0.05);
+    // Clamped both ways: long stalls (tab switches) and out-of-order timestamps.
+    const realDt = Math.min(Math.max((now - this.lastFrame) / 1000, 0), 0.05);
     this.lastFrame = now;
+    this.slowMo = Math.max(0, this.slowMo - realDt);
+    this.shake *= Math.exp(-JUICE.shakeDecay * realDt);
+    const dt = realDt * (this.slowMo > 0 ? JUICE.slowMoScale : 1);
     this.elapsed += dt;
     const t = this.elapsed;
     const wind = windAt(t);
@@ -189,6 +224,8 @@ export class Game {
     this.updatePlayer(dt, t, wind);
     this.updateRivals(dt, t, wind);
     if (this.phase === 'playing') this.updatePechas(dt);
+    this.updateSky(dt);
+    this.fireworks.update(dt);
     this.updateCamera(t);
     this.world.update(t, this.camera.position, !this.reduceMotion);
     this.updateLabels();
@@ -224,7 +261,7 @@ export class Game {
     if (this.phase === 'lost') {
       this.lostTimer -= dt;
       if (this.lostTimer <= 0) {
-        this.phase = 'over';
+        this.setPhase('over');
         this.hud.showGameOver({
           ...this.lostTo,
           cuts: this.cuts,
@@ -352,6 +389,7 @@ export class Game {
 
   private cutRival(rival: Rival, at: Vector3): void {
     rival.kite.cut(at);
+    this.celebrateCut(rival, at);
     rival.hooked = false;
     this.cuts += 1;
     if (this.cuts > this.best) {
@@ -366,8 +404,45 @@ export class Game {
     this.audio.dhol();
   }
 
+  /** Kite paper confetti where the line snapped, fireworks above, a beat of slow motion. */
+  private celebrateCut(rival: Rival, at: Vector3): void {
+    const { left, right, accent } = rival.colors;
+    this.fireworks.burst(rival.kite.mesh.position, [left, right, accent], 'paper');
+    const shells = FIREWORKS.colors;
+    for (let i = 0; i < 3; i++) {
+      this.fxPoint.set(range(this.rng, -14, 14), range(this.rng, 8, 20), range(this.rng, -8, 8));
+      this.fxPoint.add(at);
+      const shell = pick(this.rng, shells);
+      this.fireworks.burst(this.fxPoint, [shell, pick(this.rng, shells)], 'firework', i * 0.25);
+    }
+    if (!this.reduceMotion) {
+      this.slowMo = JUICE.slowMoSeconds;
+      this.shake = JUICE.shake;
+    }
+  }
+
+  /** Golden hour fades to night as the round goes on; fireworks go up after dark. */
+  private updateSky(dt: number): void {
+    if (this.phase === 'playing') this.roundTime += dt;
+    const target = this.phase === 'intro' ? 0 : nightFor(this.roundTime);
+    this.night += (target - this.night) * Math.min(1, dt * TIME_OF_DAY.easing);
+    this.world.setNight(this.night);
+
+    if (this.night < FIREWORKS.ambientFromNight) return;
+    this.ambientFireworkTimer -= dt;
+    if (this.ambientFireworkTimer > 0) return;
+    this.ambientFireworkTimer = range(this.rng, ...FIREWORKS.ambientEvery);
+    this.fxPoint.set(
+      range(this.rng, -260, 260),
+      range(this.rng, 90, 150),
+      range(this.rng, -450, -220),
+    );
+    const shell = pick(this.rng, FIREWORKS.colors);
+    this.fireworks.burst(this.fxPoint, [shell], 'firework', 0, 3);
+  }
+
   private lose(reason: 'cut' | 'crash', by?: string, at?: Vector3): void {
-    this.phase = 'lost';
+    this.setPhase('lost');
     this.lostTimer = GAME_OVER_DELAY;
     this.lostTo = by === undefined ? { reason } : { reason, by };
     this.controls.enabled = false;
@@ -387,6 +462,10 @@ export class Game {
     if (!this.reduceMotion) {
       this.camera.position.x += Math.sin(t * 0.5) * CAMERA.sway;
       this.camera.position.y += Math.sin(t * 0.8) * CAMERA.sway * 0.4;
+    }
+    if (this.shake > 0.001) {
+      this.camera.position.x += (Math.random() - 0.5) * this.shake;
+      this.camera.position.y += (Math.random() - 0.5) * this.shake;
     }
     this.camera.lookAt(this.look);
   }

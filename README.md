@@ -23,6 +23,19 @@ Each kite you cut makes the sky busier: more rivals at once, sharper manjha,
 and meaner flyers (cautious → aggressive → trickster). If your kite sits on the
 rooftops for too long, it crashes.
 
+The sun sets as a round goes on: by the time you've been flying a couple
+of minutes it's a starry Basant night, with string lights on the rooftops and
+fireworks across the city. Every cut gets fireworks, kite-paper confetti and a
+beat of slow motion.
+
+## Soundtrack
+
+Music lives in `public/music/`: add the files and list them in
+`public/music/tracks.json` (see [`public/music/README.md`](public/music/README.md)).
+It plays once you hit **Fly**, sounds muffled (like the neighbour's roof) on
+the menus, and shows a "Now playing" credit linking to the artist. Only add
+music the artists have given permission for.
+
 ## Develop
 
 Requires Node 22.12+.

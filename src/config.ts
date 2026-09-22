@@ -33,6 +33,47 @@ export const SKY = {
   sunDirection: [-0.55, 0.09, -1] as Vec3Tuple,
 } as const;
 
+/** The sky a round fades into as the evening goes on. */
+export const NIGHT_SKY = {
+  top: '#0B0A22',
+  middle: '#261B48',
+  horizon: '#6A3B5C',
+  fog: '#241C3C',
+  moonDirection: [0.45, 0.32, -1] as Vec3Tuple,
+} as const;
+
+export const LIGHT_LEVELS = {
+  day: { hemisphere: 2.4, sun: 2.8, fill: 1.0 },
+  night: { hemisphere: 0.8, sun: 0, fill: 1.3 },
+} as const;
+
+export const TIME_OF_DAY = {
+  /** Seconds into a round when the sun starts to set. */
+  duskStarts: 20,
+  /** Seconds into a round when it's full night. */
+  nightFalls: 150,
+  /** How quickly the sky catches up to where it should be (per second). */
+  easing: 0.6,
+} as const;
+
+/** The payoff when you cut a kite. */
+export const JUICE = {
+  slowMoSeconds: 0.7,
+  slowMoScale: 0.3,
+  shake: 0.45,
+  /** Shake fades by this factor per second. */
+  shakeDecay: 3,
+} as const;
+
+export const FIREWORKS = {
+  poolSize: 16,
+  particles: 140,
+  /** Night level after which fireworks go up across the city. */
+  ambientFromNight: 0.55,
+  ambientEvery: [2.5, 6] as const,
+  colors: ['#FFD27A', '#FF6B9A', '#7AE0FF', '#B8FF7A', '#FFF4E0', '#C79BFF'],
+} as const;
+
 export const KITE_PHYSICS = {
   minLine: 55,
   maxLine: 150,
