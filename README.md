@@ -1,6 +1,7 @@
 # Bo Kata!
 
-A Basant kite-fighting game over a low-poly 3D Lahore, playable in the browser.
+A Basant kite-fighting game over a low-poly 3D Lahore, playable in the browser
+at **[bo-kata.vercel.app](https://bo-kata.vercel.app)**.
 
 You're on a rooftop in the Walled City at golden hour, with Badshahi Mosque and
 Minar-e-Pakistan on the skyline. Fly your patang, hook a rival's dor in a pecha,
@@ -55,9 +56,6 @@ npm run dev        # http://localhost:5173
 | `npm run format`  | Prettier                                           |
 | `npm run check`   | Everything CI runs: types, lint, formatting, tests |
 
-The `dist/` folder is a static site, so you can host it anywhere (GitHub Pages,
-Netlify, Vercel, or any file server).
-
 ## How it's built
 
 TypeScript + [three.js](https://threejs.org/), bundled with Vite. There are no
@@ -83,3 +81,21 @@ pecha rules (`fight/pecha.ts`), rival AI (`fight/rivalBrain.ts`), the
 difficulty curve and the city layout are plain functions and classes with no
 WebGL, so they are unit tested directly. To rebalance the game, start with
 `src/config.ts`.
+
+## Contributing
+
+Bug fixes, balance tweaks and new ideas are welcome:
+
+1. Fork the repo and create a branch.
+2. Run `npm run check` before opening a pull request. CI runs the same checks.
+3. Open a pull request describing what you changed and why.
+
+By opening a pull request, you agree that your contribution can be used as part
+of Bo Kata! under the terms in [`LICENSE`](LICENSE).
+
+## Licence
+
+Bo Kata! is source-available, not open source. You're welcome to read the code,
+run it locally and send pull requests, but please don't host the game or a copy
+of it anywhere else, or reuse the code in your own projects. The full terms are
+in [`LICENSE`](LICENSE).

@@ -1,0 +1,50 @@
+Bo Kata! Source-Available Licence
+
+Copyright (c) 2026 Hamza Ahmad. All rights reserved.
+
+The source code of Bo Kata! is public so that people can read it, learn from
+it and help improve it. It is not open source. The only official copy of the
+game is the one published by the copyright holder at https://bo-kata.vercel.app.
+
+1. What you may do
+
+   a. View, download and fork this repository.
+   b. Run the game on your own device, to play it or to develop changes.
+   c. Modify the code to prepare changes, and propose them to this
+      repository through pull requests.
+
+2. What you may not do
+
+   a. Host, deploy, publish or distribute the game, or any modified version
+      of it, anywhere other than the official deployment. This includes
+      public websites, app stores and game portals.
+   b. Use the code, or substantial parts of it, in another game, product or
+      service.
+   c. Use the name "Bo Kata!" or its branding for any other project.
+
+3. Contributions
+
+   By submitting a pull request or any other contribution, you confirm that
+   you wrote it or have the right to submit it, and you grant the copyright
+   holder a perpetual, worldwide, royalty-free, irrevocable licence to use,
+   modify, sublicense and distribute it, as part of Bo Kata! or otherwise,
+   under any terms. You keep the copyright in your contribution.
+
+4. Music
+
+   Music in public/music/ belongs to its artists and is not covered by this
+   licence.
+
+5. Termination
+
+   If you break these terms, your permission under this licence ends
+   automatically.
+
+6. No warranty
+
+   The software is provided "as is", without warranty of any kind. The
+   copyright holder is not liable for any claim, damages or other liability
+   arising from its use.
+
+For any use not covered here, ask first by opening an issue at
+https://github.com/hamza13-12/bo-kata.

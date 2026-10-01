@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "A Basant kite-fighting game over a low-poly 3D Lahore.",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
